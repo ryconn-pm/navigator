@@ -1,1 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduling Inspections — Ryconn Property Management</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ryconn-pm/inspection-reschedule-portal/main/Ryconn-Property-Management-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F6F5F2;--surface:#fff;--surface2:#F0EEE9;--border:#E2DFD8;
+  --text:#1A1917;--text2:#6B6963;--text3:#9E9A93;
+  --accent:#1F3D87;--accent-mid:#21569B;--accent-light:#247AB9;--accent-bg:#E8EEF8;--accent-hover:#21569B;
+  --success:#0F6E56;--success-bg:#E1F5EE;--success-border:#9FE1CB;
+  --warn:#854F0B;--warn-bg:#FAEEDA;
+  --err:#A32D2D;--err-bg:#FCEBEB;
+  --info-bg:#E8EEF8;--info-border:#B8CCE8;
+  --r:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 1rem 5rem;}
+.top-bar{height:4px;background:linear-gradient(90deg,#1F3D87 0%,#21569B 50%,#247AB9 100%);position:fixed;top:0;left:0;right:0;z-index:100;}
+.container{width:100%;max-width:600px;padding-top:2rem;}
+.ph{display:flex;align-items:center;justify-content:center;margin-bottom:2rem;}
+.ph img{max-width:100%;height:auto;max-height:52px;}
 
+.page-header{margin-bottom:1.75rem;}
+.page-header h1{font-size:20px;font-weight:600;margin-bottom:4px;}
+.page-header p{font-size:13px;color:var(--text2);line-height:1.5;}
+
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;background-image:radial-gradient(circle,rgba(0,0,0,.025) 1px,transparent 1px);background-size:20px 20px;background-color:var(--surface);}
+.step-card.done .step-num{background:var(--success-bg);border-color:var(--success-border);color:var(--success);}
+.step-num{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text2);flex-shrink:0;margin-top:1px;transition:all .2s;}
+.step-body{flex:1;min-width:0;}
+.step-label{font-size:14px;font-weight:600;color:var(--text);margin:0 0 3px;}
+.step-desc{font-size:12px;color:var(--text2);margin:0 0 10px;line-height:1.5;}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:none;color:var(--text2);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--surface2);}
+
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.status{font-size:12px;padding:7px 11px;border-radius:8px;display:none;margin-top:8px;line-height:1.5;}
+.status.ok{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);}
+.status.err{background:var(--err-bg);color:var(--err);border:1px solid #F7C1C1;}
+.status.loading{background:var(--info-bg);color:var(--accent);border:1px solid var(--info-border);}
+
+svg.ico{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="container">
+  <div class="ph">
+    <img src="https://raw.githubusercontent.com/ryconn-pm/inspection-reschedule-portal/main/Ryconn-Property-Management-horizontal.png" alt="Ryconn Property Management">
+  </div>
+
+  <div class="page-header">
+    <h1>Scheduling Inspections</h1>
+    <p>Complete these steps in order each scheduling cycle to assign and notify tenants of upcoming inspections.</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step-card" id="card-1">
+    <div class="step-num" id="num-1">1</div>
+    <div class="step-body">
+      <p class="step-label">Get "to be scheduled" list</p>
+      <p class="step-desc">Trigger the Power Automate flow to pull the list of units that need to be scheduled for inspection.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="triggerFlow(1)" id="btn-1">
+          <svg class="ico" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="btn-1-label">Run flow</span>
+          <div class="spinner" id="spin-1"></div>
+        </button>
+        <button class="btn btn-secondary" onclick="copySchema(1)" id="schema-btn-1">
+          <svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy JSON schema
+        </button>
+      </div>
+      <div class="status" id="status-1"></div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-card" id="card-2">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <p class="step-label">Upload data to calendar visualizer</p>
+      <p class="step-desc">Open the Inspection Schedule Calendar and upload the latest scheduling data.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="https://ryconn-pm.github.io/inspection-calendar/" target="_blank">
+          <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Open calendar
+          <svg class="ico" viewBox="0 0 24 24" style="width:12px;height:12px;opacity:.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-card" id="card-3">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <p class="step-label">Change custom fields in AppFolio</p>
+      <p class="step-desc">Update the custom inspection fields for each unit in AppFolio to reflect the new scheduled dates.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="https://ryconn.appfolio.com/" target="_blank">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open AppFolio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-card" id="card-4">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <p class="step-label">Refresh inspection dates — automation report</p>
+      <p class="step-desc">Open the Inspection Dates automation report sheet in SharePoint and refresh the data.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="https://ryconn.sharepoint.com/:x:/s/RyconnOperations/IQDZE9ae9RO5Q440qztt9ACWAfeMDxS_enKNZiS0KITz6I0?e=BNzV0n" target="_blank">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Open spreadsheet
+          <svg class="ico" viewBox="0 0 24 24" style="width:12px;height:12px;opacity:.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step-card" id="card-5">
+    <div class="step-num" id="num-5">5</div>
+    <div class="step-body">
+      <p class="step-label">Send initial scheduling email</p>
+      <p class="step-desc">Trigger the Power Automate flow to send the initial inspection scheduling email to tenants.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="triggerFlow(5)" id="btn-5">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span id="btn-5-label">Send emails</span>
+          <div class="spinner" id="spin-5"></div>
+        </button>
+        <button class="btn btn-secondary" onclick="copySchema(5)" id="schema-btn-5">
+          <svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy JSON schema
+        </button>
+      </div>
+      <div class="status" id="status-5"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var FLOW_URLS = {
+  1: 'https://defaulted28649ccb124587ad449b6665c6a4.ed.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/043642c48f9b4bf38f78e9f7728d20c5/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=rv_z1ikmo936KmPC5IMsUellL0Kogitqwf7UP1HSlRE',
+  5: 'https://defaulted28649ccb124587ad449b6665c6a4.ed.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/dd1d9649a05f4145904e65de0712bb67/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=VzTfnyFTHpwXDQ0KUL8yoO4W_I0iHJo54umrh5Br8Vg'
+};
+
+var SCHEMAS = {
+  1: {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "triggerSource": { "type": "string", "description": "Identifier for what triggered the flow" },
+      "requestedBy": { "type": "string", "description": "User or system requesting the list" },
+      "asOfDate": { "type": "string", "description": "Date to pull the list for (ISO 8601, e.g. 2026-05-26)" }
+    },
+    "required": ["triggerSource"]
+  },
+  5: {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "triggerSource": { "type": "string", "description": "Identifier for what triggered the flow" },
+      "scheduledDate": { "type": "string", "description": "Inspection date being communicated (ISO 8601)" },
+      "timeSlot": { "type": "string", "description": "Inspection time window, e.g. '9:00 AM to 11:00 AM'" },
+      "propertyAddress": { "type": "string" },
+      "unitName": { "type": "string" },
+      "tenantEmail": { "type": "string", "format": "email" },
+      "tenantName": { "type": "string" }
+    },
+    "required": ["triggerSource"]
+  }
+};
+
+async function triggerFlow(step) {
+  var url = FLOW_URLS[step];
+  var btn = document.getElementById('btn-' + step);
+  var label = document.getElementById('btn-' + step + '-label');
+  var spin = document.getElementById('spin-' + step);
+  var statusEl = document.getElementById('status-' + step);
+
+  btn.disabled = true;
+  label.textContent = 'Running\u2026';
+  spin.style.display = 'block';
+  statusEl.textContent = 'Sending request\u2026';
+  statusEl.className = 'status loading';
+  statusEl.style.display = 'block';
+
+  try {
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ triggerSource: 'workflow-page' })
+    });
+
+    spin.style.display = 'none';
+    label.textContent = step === 1 ? 'Run flow' : 'Send emails';
+    btn.disabled = false;
+
+    if (res.ok) {
+      statusEl.textContent = '\u2713 Flow triggered successfully.';
+      statusEl.className = 'status ok';
+      document.getElementById('num-' + step).textContent = '\u2713';
+      document.getElementById('card-' + step).classList.add('done');
+    } else {
+      statusEl.textContent = 'Flow returned status ' + res.status + '. Check Power Automate run history.';
+      statusEl.className = 'status err';
+    }
+  } catch(e) {
+    spin.style.display = 'none';
+    label.textContent = step === 1 ? 'Run flow' : 'Send emails';
+    btn.disabled = false;
+    statusEl.textContent = 'Request failed: ' + e.message;
+    statusEl.className = 'status err';
+  }
+}
+
+async function copySchema(step) {
+  var schema = JSON.stringify(SCHEMAS[step], null, 2);
+  var btn = document.getElementById('schema-btn-' + step);
+  try {
+    await navigator.clipboard.writeText(schema);
+  } catch(e) {
+    prompt('Copy this JSON schema:', schema);
+    return;
+  }
+  btn.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+  setTimeout(function() {
+    btn.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy JSON schema';
+  }, 2000);
+}
+</script>
+</body>
+</html>
